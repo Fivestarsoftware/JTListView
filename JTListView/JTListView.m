@@ -8,6 +8,8 @@
 
 #import "JTListView.h"
 
+BOOL JTListViewLayoutIsHorizontal(JTListViewLayout layout);
+BOOL JTListViewLayoutIsVertical(JTListViewLayout layout);
 
 BOOL JTListViewLayoutIsHorizontal(JTListViewLayout layout)
 {

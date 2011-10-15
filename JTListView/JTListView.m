@@ -66,9 +66,9 @@ BOOL JTListViewLayoutIsVertical(JTListViewLayout layout)
     [self removeObserver:self forKeyPath:@"itemHeight"];
     [self removeObserver:self forKeyPath:@"gapBetweenItems"];
     
-    [_itemRects release],      _itemRects      = nil;
-    [_visibleViews release],   _visibleViews   = nil;
-    [_reuseableViews release], _reuseableViews = nil;
+    [_itemRects release],         _itemRects         = nil;
+    [_visibleViews release],      _visibleViews      = nil;
+    [_reuseableViewsMap release], _reuseableViewsMap = nil;
     
     [super dealloc];
 }
@@ -114,14 +114,14 @@ BOOL JTListViewLayoutIsVertical(JTListViewLayout layout)
 
 - (void)sharedInit
 {    
-    _itemRects       = [[NSMutableArray alloc] init];
-    _visibleRange    = NSMakeRange(0, 0);
-    _visibleViews    = [[NSMutableArray alloc] init];
-    _reuseableViews  = [[NSMutableSet alloc] init];
-    _itemWidth       = 44.0;
-    _itemHeight      = 44.0;
-    _gapBetweenItems = 0.0;
-    _visibleInsets   = UIEdgeInsetsZero;
+    _itemRects          = [[NSMutableArray alloc] init];
+    _visibleRange       = NSMakeRange(0, 0);
+    _visibleViews       = [[NSMutableArray alloc] init];
+    _reuseableViewsMap  = [[NSMutableDictionary alloc] init];
+    _itemWidth          = 44.0;
+    _itemHeight         = 44.0;
+    _gapBetweenItems    = 0.0;
+    _visibleInsets      = UIEdgeInsetsZero;
     
     self.directionalLockEnabled = YES;
     
@@ -300,11 +300,19 @@ BOOL JTListViewLayoutIsVertical(JTListViewLayout layout)
     {
         return;
     }
-    
+
     [view retain];
     [view removeFromSuperview];
     [_visibleViews removeObject:view];
-    [_reuseableViews addObject:view];
+
+    NSMutableSet *set = [_reuseableViewsMap objectForKey:NSStringFromClass([view class])];
+    if (!set)
+    {
+        set = [NSMutableSet set];
+        [_reuseableViewsMap setObject:set forKey:NSStringFromClass([view class])];
+    }
+
+    [set addObject:view];
     [view release];
 }
 
@@ -905,15 +913,21 @@ BOOL JTListViewLayoutIsVertical(JTListViewLayout layout)
     }
 }
 
-- (UIView *)dequeueReusableView
+- (UIView *)dequeueReusableViewWithClass:(Class)aClass
 {
-    UIView *reuseableView = [_reuseableViews anyObject];
-    if (reuseableView)
+    NSMutableSet *reuseableViews = [_reuseableViewsMap objectForKey:NSStringFromClass(aClass)];
+    if (reuseableViews)
     {
-        [[reuseableView retain] autorelease];
-        [_reuseableViews removeObject:reuseableView];
+        UIView *reuseableView = [reuseableViews anyObject];
+        if (reuseableView)
+        {
+            [[reuseableView retain] autorelease];
+            [reuseableViews removeObject:reuseableView];
+             return reuseableView;
+        }
     }
-    return reuseableView;
+
+    return nil;
 }
 
 
@@ -1013,7 +1027,7 @@ BOOL JTListViewLayoutIsVertical(JTListViewLayout layout)
 
 - (UIView *)listView:(JTListView *)listView viewForItemAtIndex:(NSUInteger)index
 {
-    UIView *view = [listView dequeueReusableView];
+    UIView *view = [listView dequeueReusableViewWithClass:[UIView class]];
     if (!view)
     {
         view = [[[UIView alloc] init] autorelease];

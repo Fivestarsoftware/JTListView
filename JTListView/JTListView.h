@@ -47,10 +47,10 @@ typedef enum {
 
 @interface JTListView : UIScrollView {
 @package
-    NSMutableArray *_itemRects;
-    NSRange         _visibleRange;
-    NSMutableArray *_visibleViews;
-    NSMutableSet   *_reuseableViews;
+    NSMutableArray      *_itemRects;
+    NSRange             _visibleRange;
+    NSMutableArray      *_visibleViews;
+    NSMutableDictionary *_reuseableViewsMap;
 }
 
 @property (nonatomic, assign) IBOutlet id <JTListViewDataSource> dataSource;
@@ -90,7 +90,7 @@ typedef enum {
 - (void)goBack:(BOOL)animated;
 - (void)goForward:(BOOL)animated;
 
-- (UIView *)dequeueReusableView;   // similar to UITableView's dequeueReusableCellWithIdentifier:
+- (UIView *)dequeueReusableViewWithClass:(Class)aClass;   // similar to UITableView's dequeueReusableCellWithIdentifier:
 
 @end
 
